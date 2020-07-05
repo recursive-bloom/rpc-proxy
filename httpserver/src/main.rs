@@ -3,7 +3,35 @@ use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, RestApi, 
 use std::collections::HashMap;
 use std::vec::Vec;
 use serde_json;
+use std::sync::atomic::{self, AtomicUsize};
+use jsonrpc_http_server::jsonrpc_core::futures::future::Either;
+use jsonrpc_http_server::jsonrpc_core::futures::Future;
 
+
+#[derive(Clone, Debug, Default)]
+struct Meta(usize);
+impl Metadata for Meta {}
+
+#[derive(Default)]
+struct MyMiddleware(AtomicUsize);
+impl Middleware<Meta> for MyMiddleware {
+	type Future = FutureResponse;
+	type CallFuture = middleware::NoopCallFuture;
+
+	fn on_request<F, X>(&self, request: Request, meta: Meta, next: F) -> Either<Self::Future, X>
+		where
+			F: FnOnce(Request, Meta) -> X + Send,
+			X: Future<Item = Option<Response>, Error = ()> + Send + 'static,
+	{
+
+		println!("Processing request: {:?}", request);
+
+		Either::A(Box::new(next(request, meta).map(move |res| {
+			println!("Response: {:?}", &res);
+			res
+		})))
+	}
+}
 
 fn send_transaction(s:& String)->String{
 	/*
@@ -26,7 +54,8 @@ fn send_transaction(s:& String)->String{
 	//let vec:Vec<String>=serde_json::from_str(&s).unwrap();
 }
 fn main() {
-	let mut io = IoHandler::default();
+	//let mut io = IoHandler::default();
+	let mut io = MetaIoHandler::with_middleware(MyMiddleware::default());
 
 	io.add_method("say_hello", |_params: Params| Ok(Value::String("hello".to_string())));
 	io.add_method("eth_sendTransaction", |_params: Params|{
