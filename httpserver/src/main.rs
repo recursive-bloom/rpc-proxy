@@ -7,6 +7,11 @@ use std::sync::atomic::{self, AtomicUsize};
 use jsonrpc_http_server::jsonrpc_core::futures::future::Either;
 use jsonrpc_http_server::jsonrpc_core::futures::Future;
 
+use std::env;
+use std::str::FromStr;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
+
 
 #[derive(Clone, Debug, Default)]
 struct Meta(usize);
@@ -38,6 +43,7 @@ fn send_transaction(s:& String)->String{
 		如果传入的值是hashmap型 则需要进行切片，将字符串中的中括号 ‘[  ]’去掉
 		然后再将字符串转为map，对其进行操作 ，最后返回结果
 	*/
+	//println!("{:?}",s);
 	let s0="".to_string();
 	let s_send=s0+&s[1..s.len()-1];
 	let map:HashMap<String,Value>=serde_json::from_str(&s_send).unwrap();
@@ -54,11 +60,26 @@ fn send_transaction(s:& String)->String{
 	//let vec:Vec<String>=serde_json::from_str(&s).unwrap();
 }
 fn main() {
+	let mut arguments = Vec::new();
+	for arg in env::args() {
+		arguments.push(arg);
+	}
+
+	let mut port  = 3030;
+	if arguments.len() > 1 {
+		port = i32::from_str(&arguments[1]).expect("Port argument is not invalid");
+	}
+
+
+
 	//let mut io = IoHandler::default();
 	let mut io = MetaIoHandler::with_middleware(MyMiddleware::default());
 
 	io.add_method("say_hello", |_params: Params| Ok(Value::String("hello".to_string())));
 	io.add_method("eth_sendTransaction", |_params: Params|{
+
+		//println!("{:?}",_params);
+
 		let par=serde_json::to_string(&_params);//取出传进来的param值
 		let s=match par{
 			Ok(i)=>i,
@@ -68,12 +89,12 @@ fn main() {
 		Ok(Value::String(res))            //将函数返回值传出，显示为result
 	});
 
-
+	let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port as u16);
 	let server = ServerBuilder::new(io)
 		.threads(3)
 		.rest_api(RestApi::Unsecure)
 		.cors(DomainsValidation::AllowOnly(vec![AccessControlAllowOrigin::Any]))
-		.start_http(&"127.0.0.1:3030".parse().unwrap())
+		.start_http(&socket)
 		.expect("Unable to start RPC server");
 
 	server.wait();
