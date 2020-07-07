@@ -1,9 +1,10 @@
 
-
-//! rpc interface.
+use crate::rpc::BlockNumber;
 use jsonrpc_core::{Result, BoxFuture};
 use jsonrpc_derive::rpc;
 use ethereum_types::{H64, H160, H256, U64, U256};
+
+
 
 /// bloom rpc interface.
 #[rpc(server)]
@@ -17,5 +18,9 @@ pub trait Eth {
 
     /// Returns balance of the given account.
     #[rpc(name = "eth_getBalance")]
-    fn balance(&self, _: H160, _: Option<u64>) -> BoxFuture<U256>;
+    fn balance(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<U256>;
+
+    //   /// Send transaction
+//    #[rpc(name = "eth_getBalance")]
+//    fn send_transaction(&self, _: Option<BlockNumber>) -> BoxFuture<U256>;
 }
