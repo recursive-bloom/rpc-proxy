@@ -1,7 +1,5 @@
 
-use crate::rpc::Eth;
-use crate::rpc::Metadata;
-use crate::rpc::BlockNumber;
+use crate::rpc::*;
 
 use jsonrpc_core::{Result, BoxFuture};
 use jsonrpc_core::futures::future;
@@ -27,5 +25,10 @@ impl Eth for EthClient {
     fn balance(&self, address: H160, num: Option<BlockNumber>) -> BoxFuture<U256> {
         let bal = U256::zero();
         Box::new(future::done(Ok(bal)))
+    }
+
+    fn send_transaction(&self, tx: TransactionRequest) -> BoxFuture<H256> {
+        println!("{}",tx);
+        Box::new(future::done(Ok(H256::default())))
     }
 }
