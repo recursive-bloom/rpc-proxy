@@ -2,7 +2,9 @@ mod commands;
 
 use commands::Subcommand; //自定义
 use structopt::StructOpt; //官方
-
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 #[derive(Debug, StructOpt)]
 pub struct Cli {
 	#[structopt(subcommand)]
@@ -12,8 +14,6 @@ pub struct Cli {
 
 fn main() {
 	let cli = Cli::from_args();
-	//println!("{:#?}", cli);
-
 	if let Some(ref subcmd) = cli.subcmd {
 		subcmd.run();
 	} else {
